@@ -4,5 +4,6 @@
 *.log
 *.pyc
 *.pdf
+*.png
 *.toc
 data/*.txt
