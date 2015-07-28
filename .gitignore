@@ -5,3 +5,4 @@
 *.pyc
 *.pdf
 *.toc
+data/*.txt
