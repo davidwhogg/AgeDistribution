@@ -5,12 +5,17 @@ class SFHModel():
     def __init__(self):
         """
         Note magic number 13.7 (age of the Universe in Gyr).
+        Note many other magic numbers!
         """
-        self.dlntime = 0.5
+        self.dlntime = 0.25
         self.lntimes = np.arange(np.log(0.01), np.log(13.7), self.dlntime)
         self.times = np.exp(self.lntimes)
         self.M = len(self.lntimes)
-        print self.dlntime, self.lntimes, self.times, self.M
+        self.prior_mean = np.log((20000. / 13.7) * self.times)
+        self.prior_covar = 1. * np.exp(-1. * np.abs(np.arange(self.M)[:, None] -
+                                         np.arange(self.M)[None, :]))
+        self.prior_invcovar = np.linalg.inv(self.prior_covar)
+        print np.sum(np.exp(self.prior_mean) * self.dlntime)
 
     def __call__(self, parvec):
         return self.lnprob(parvec)
@@ -21,6 +26,32 @@ class SFHModel():
         assert len(ages) == self.N
         self.ages = ages
         self.ivars = ivars
+
+    def load_data(self):
+        """
+        brittle function to read MKN data file
+        """
+        fn = "../data/HWR_redclump_sample.txt"
+        print "Reading %s ..." % fn
+        data = np.genfromtxt(fn)
+        names = ["ID", "distance", "Radius_gal", "Phi_gal", "z", "Teff",
+                 "logg", "[Fe/H]", "[alpha/Fe]", "age"]
+        print data[2]
+        print data.shape
+        print "Read %s" % fn
+        ages = (data[:, 9]).flatten()
+        ivars = np.zeros_like(ages) + (0.25 / np.log10(np.e))
+        self.set_data(ages, ivars)
+
+    def get_ages(self):
+        return self.ages
+
+    def get_age_ivars(self):
+        return self.ivars
+
+    def _oned_gaussian(self, x, mu, ivar):
+        return np.exp(-0.5 * (x - mu) * (x - mu) * ivar) *\
+            np.sqrt(0.5 * ivar / np.pi)
 
     def sfr(self, lntimes, lnamps, ivars):
         """
@@ -60,14 +91,10 @@ class SFHModel():
         """
         proper prior from Gaussian processes
         """
-        lnamps = parvec
-        mu = np.log(2000. / self.dlntime) + self.lntimes # fucked 2000 stars per Gyr?
-        print mu
-        covar = 1. * np.exp(-1. * np.abs(np.arange(self.M)[:, None] -
-                                         np.arange(self.M)[None, :]))
-        print covar
-        assert False
-        return np.dot((lnamps - mu), np.linalg.solve(covar, (lnamps - mu)))
+        deltas = parvec - self.prior_mean
+        return np.dot(deltas,
+                      np.dot(self.prior_invcovar,
+                             deltas))
 
     def lnlike(self, parvec):
         """
@@ -76,7 +103,10 @@ class SFHModel():
         lnamps = parvec
         return np.sum(np.log(self.sfr(self.get_ages(), lnamps,
                                       self.get_age_ivars()))) \
-                                      - sfr_integral(lnamps)
+                                      - self.sfr_integral(lnamps)
 
 if __name__ == "__main__":
-    model = SFHModel
+    model = SFHModel()
+    model.load_data()
+    lnamps = 1. * model.prior_mean
+    print model(lnamps)
