@@ -34,7 +34,7 @@ class SFHModel():
         """
         brittle function to read MKN data file
 
-        HORRIBLE np.abs() CALL
+        HORRIBLE clip.
         """
         fn = "../data/HWR_redclump_sample.txt"
         print "Reading %s ..." % fn
@@ -44,7 +44,9 @@ class SFHModel():
         print data[2]
         print data.shape
         print "Read %s" % fn
-        ages = np.abs(data[:, 9]).flatten() # AARGH
+        ages = data[:, 9].flatten()
+        good = (ages > 0.05) * (ages < 13.8) # HORRIBLE HACK
+        ages = ages[good]
         ivars = np.zeros_like(ages) + (0.25 / np.log10(np.e)) # MAGIC
         self.set_data(ages, ivars)
 
@@ -88,11 +90,9 @@ class SFHModel():
 
     def lnprob(self, parvec):
         lnp = self.lnprior(parvec)
-        print "ln prior", lnp
         if not np.isfinite(lnp):
             return -np.Inf
         lnl = self.lnlike(parvec)
-        print "ln like", lnl
         if not np.isfinite(lnl):
             return -np.Inf
         return lnp + lnl
@@ -111,8 +111,8 @@ class SFHModel():
         Poisson-like likelihood function.
         """
         return (np.sum(np.log(self.sfr(self.get_ages(), parvec,
-                                      self.get_age_ivars())))
-                - self.sfr_integral(lnamps))
+                                       self.get_age_ivars())))
+                - self.sfr_integral(parvec))
 
 if __name__ == "__main__":
     import os
@@ -121,6 +121,13 @@ if __name__ == "__main__":
     model.load_data()
     lnamps = 1. * model.prior_mean
     print model(lnamps)
+
+    dNdlnt, bins = np.histogram(np.log(model.get_ages()), bins=128,
+                                range=(np.log(0.05), np.log(13.8)), density=True)
+    dNdlnt *= float(model.N)
+    xhist = np.exp((bins[:, None] * np.ones(2)[None, :]).flatten())[1:-1]
+    yhist = (dNdlnt[:, None] * np.ones(2)[None, :]).flatten()
+    yhist = np.clip(yhist, 1., np.Inf) # MAGIC
 
     nwalkers = 4 * model.M
     p0 = model.prior_mean[None, :] +\
@@ -132,23 +139,26 @@ if __name__ == "__main__":
     fineivars = np.zeros_like(finetgrid) + 0.25 / np.log10(np.e)
     for i in range(16):
         print "parent", i, newpid, "running emcee"
-        sampler.run_mcmc(p0, 32)
+        sampler.run_mcmc(p0, 64)
         p0 = sampler.chain[:, -1, :].reshape(nwalkers, model.M)
         newpid = os.fork()
         if newpid == 0:
             plt.clf()
+            plt.plot(xhist, np.log(yhist), "k-")
             for i in range(16):
-                plt.plot(model.times, p0[i, :], "k-", alpha=0.5)
+                plt.plot(model.times, p0[i, :], "bo", alpha=0.5)
                 plt.plot(finetgrid,
                          np.log(model.sfr(np.log(finetgrid), p0[i, :], fineivars)),
-                         "k-", alpha=0.5)
-            plt.plot(model.times, model.prior_mean, "r-", alpha=0.5)
+                         "b-", alpha=0.5)
+            plt.plot(model.times, model.prior_mean, "ro", alpha=0.5)
             plt.plot(finetgrid,
                      np.log(model.sfr(np.log(finetgrid), model.prior_mean, fineivars)),
                          "r-", alpha=0.5)
             plt.semilogx()
-            plt.xlabel("time (Gyr)")
+            plt.xlabel("time ago (Gyr)")
             plt.ylabel("ln (number per ln time)")
+            plt.xlim(0.05, 13.8)
+            plt.ylim(0., 10.)
             fn = "sfh.png"
             print "child saving", fn
             plt.savefig(fn)
