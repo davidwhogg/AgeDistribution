@@ -1,4 +1,13 @@
+"""
+This file is part of the *AgeDistribution* project.
+Copyright 2015 David W. Hogg (NYU).
+
+## bugs:
+- doesn't have an associated LaTeX document
+
+"""
 import numpy as np
+from scipy.stats import norm as gaussian
 import matplotlib.pylab as plt
 import emcee
 
@@ -9,11 +18,15 @@ class SFHModel():
         Note magic number 13.7 (age of the Universe in Gyr).
         Note many other magic numbers!
         """
-        self.dlntime = 0.3
+        self.dlntime = 0.6
         self.lntimes = np.arange(np.log(0.1), np.log(13.7), self.dlntime)
         self.times = np.exp(self.lntimes)
+        self.minage = 0.05 # Gyr
+        self.maxage = 13.7 # Gyr
+        self.minlnage = np.log(self.minage)
+        self.maxlnage = np.log(self.maxage)
         self.M = len(self.lntimes)
-        self.prior_mean = np.log((20000. / 13.7) * self.times)
+        self.prior_mean = np.log((5000. / 13.7) * self.times)
         self.prior_covar = 1. * np.exp(-1. * np.abs(np.arange(self.M)[:, None] -
                                                     np.arange(self.M)[None, :]))
         self.prior_invcovar = np.linalg.inv(self.prior_covar)
@@ -24,11 +37,15 @@ class SFHModel():
 
     def set_data(self, ages, ivars):
         assert ivars.shape == ages.shape
-        self.N = ages.shape[0]
-        assert len(ages) == self.N
-        assert np.all(ages > 0.)
-        self.ages = ages
-        self.ivars = ivars
+        good = (ages > self.minage) * (ages < self.maxage)
+        self.ages = ages[good]
+        self.ivars = ivars[good]
+        self.N = self.ages.shape[0]
+        assert len(self.ages) == self.N
+        assert np.all(self.ages >= self.minage)
+        assert np.all(self.ages <= self.maxage)
+        assert np.all(self.ivars >= 0.)
+        self.lnages = np.log(self.ages)
 
     def load_data(self):
         """
@@ -45,20 +62,22 @@ class SFHModel():
         print data.shape
         print "Read %s" % fn
         ages = data[:, 9].flatten()
-        good = (ages > 0.05) * (ages < 13.8) # HORRIBLE HACK
-        ages = ages[good]
-        ivars = np.zeros_like(ages) + (0.25 / np.log10(np.e)) # MAGIC
+        sigma = 0.25 / np.log10(np.e) # MAGIC
+        ivars = np.zeros_like(ages) + 1. / (sigma * sigma)
         self.set_data(ages, ivars)
 
-    def get_ages(self):
-        return self.ages
+    def get_lnages(self):
+        return self.lnages
 
-    def get_age_ivars(self):
+    def get_lnage_ivars(self):
         return self.ivars
 
     def _oned_gaussian(self, x, mu, ivar):
-        return np.exp(-0.5 * (x - mu) * (x - mu) * ivar) *\
-            np.sqrt(0.5 * ivar / np.pi)
+        return gaussian.pdf(x - mu) * np.sqrt(ivar)
+
+    def _integrate_oned_gaussian(self, x1, x2, mu, ivar):
+        return (gaussian.cdf(x2 - mu) -
+                gaussian.cdf(x1 - mu)) * np.sqrt(ivar)
 
     def sfr(self, lntimes, lnamps, ivars):
         """
@@ -75,18 +94,24 @@ class SFHModel():
         """
         assert len(lnamps) == self.M
         assert len(lntimes) == len(ivars)
-        rates = 0.
+        rates = np.zeros_like(lntimes)
         for lnt, lnamp in zip(self.lntimes, lnamps):
-            rates = rates + np.exp(lnamp) *\
-                self._oned_gaussian(lntimes, lnt, ivars)
+            rates += np.exp(lnamp) * self._oned_gaussian(lntimes, lnt, ivars)
         return rates
 
-    def sfr_integral(self, lnamps):
+    def sfr_integral(self, lnamps, ivars):
         """
         approximation: The model has support at times > the age of the
         Universe.
         """
-        return np.sum(np.exp(lnamps))
+        assert len(lnamps) == self.M
+        meanivar = np.mean(ivars)
+        integral = 0.
+        for lnt, lnamp in zip(self.lntimes, lnamps):
+            integral += np.exp(lnamp) * \
+                self._integrate_oned_gaussian(self.minlnage, self.maxlnage,
+                                              lnt, meanivar)
+        return integral
 
     def lnprob(self, parvec):
         lnp = self.lnprior(parvec)
@@ -110,9 +135,9 @@ class SFHModel():
         """
         Poisson-like likelihood function.
         """
-        return (np.sum(np.log(self.sfr(self.get_ages(), parvec,
-                                       self.get_age_ivars())))
-                - self.sfr_integral(parvec))
+        return (np.sum(np.log(self.sfr(self.get_lnages(), parvec,
+                                       self.get_lnage_ivars())))
+                - self.sfr_integral(parvec, self.get_lnage_ivars()))
 
 if __name__ == "__main__":
     import os
@@ -122,7 +147,7 @@ if __name__ == "__main__":
     lnamps = 1. * model.prior_mean
     print model(lnamps)
 
-    dNdlnt, bins = np.histogram(np.log(model.get_ages()), bins=128,
+    dNdlnt, bins = np.histogram(model.get_lnages(), bins=128,
                                 range=(np.log(0.05), np.log(13.8)), density=True)
     dNdlnt *= float(model.N)
     xhist = np.exp((bins[:, None] * np.ones(2)[None, :]).flatten())[1:-1]
@@ -136,7 +161,7 @@ if __name__ == "__main__":
 
     newpid = 0
     finetgrid = np.exp(np.arange(np.log(0.05), np.log(13.8), 0.01))
-    fineivars = np.zeros_like(finetgrid) + 0.25 / np.log10(np.e)
+    fineivars = np.zeros_like(finetgrid) + np.mean(model.get_lnage_ivars())
     for i in range(16):
         print "parent", i, newpid, "running emcee"
         sampler.run_mcmc(p0, 64)
