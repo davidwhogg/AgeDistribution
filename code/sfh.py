@@ -4,8 +4,10 @@ Copyright 2015 David W. Hogg (NYU).
 
 ## bugs:
 - doesn't have an associated LaTeX document
-
+- SFHModel needs __print__(), and plot() functions
+- optimize first, sample later
 """
+
 import numpy as np
 from scipy.stats import norm as gaussian
 import matplotlib.pylab as plt
@@ -18,13 +20,13 @@ class SFHModel():
         Note magic number 13.7 (age of the Universe in Gyr).
         Note many other magic numbers!
         """
-        self.dlntime = 0.6
-        self.lntimes = np.arange(np.log(0.1), np.log(13.7), self.dlntime)
-        self.times = np.exp(self.lntimes)
+        self.dlntime = 0.3
         self.minage = 0.05 # Gyr
         self.maxage = 13.7 # Gyr
         self.minlnage = np.log(self.minage)
         self.maxlnage = np.log(self.maxage)
+        self.lntimes = np.arange(self.minlnage, self.maxlnage, self.dlntime)
+        self.times = np.exp(self.lntimes)
         self.M = len(self.lntimes)
         self.prior_mean = np.log((5000. / 13.7) * self.times)
         self.prior_covar = 1. * np.exp(-1. * np.abs(np.arange(self.M)[:, None] -
@@ -164,8 +166,9 @@ if __name__ == "__main__":
     fineivars = np.zeros_like(finetgrid) + np.mean(model.get_lnage_ivars())
     for i in range(16):
         print "parent", i, newpid, "running emcee"
-        sampler.run_mcmc(p0, 64)
-        p0 = sampler.chain[:, -1, :].reshape(nwalkers, model.M)
+        sampler.run_mcmc(p0, 32)
+        p0 = sampler.flatchain[np.argsort(sampler.flatlnprobability)[-nwalkers:]]
+        print "parent made new state", p0.shape
         newpid = os.fork()
         if newpid == 0:
             plt.clf()
