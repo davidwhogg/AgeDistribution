@@ -72,15 +72,42 @@ Off-load all mass and age estimation to Ness \etal\ (2015).
 
 The money equation is:
 \begin{eqnarray}
-  \left.\frac{\dd N}{\dd\ln M}\right| &=&
-  \left.\frac{\dd N}{\dd t\,\dd A}\right|
-  \,M\,\left.\frac{\dd t}{\dd M}\right|
+  \left.\frac{\dd N}{\dd\ln M}\right|_{M,R}
+  &=&
+  \left.\frac{\dd m}{\dd t\,\dd A}\right|_{t,R}
+  \,\left|\frac{\dd t}{\dd\ln M}\right|_{M}
+  \,\left.\frac{\dd N}{\dd m}\right|_{t}
   \,\Delta A
-  \quad ,
+  \\
+  \left.\frac{\dd N}{\dd\ln M}\right|_{M,R}
+  &\mbox{is}&
+  \mbox{the observable}
+  \\
+  \left.\frac{\dd m}{\dd t\,\dd A}\right|_{t,R}
+  &\mbox{is}&
+  \mbox{the star-formation rate (mass per time per area)}
+  \\
+  \,\left|\frac{\dd t}{\dd\ln M}\right|_{M}
+  &\mbox{is}&
+  \mbox{the Jacobian that converts $\ln$ mass to age}
+  \\
+  \,\left.\frac{\dd N}{\dd m}\right|_{t}
+  &\mbox{is}&
+  \mbox{the number of RC stars per mass formed, after time $t$}
+  \\
+  \,\Delta A
+  &\mbox{is}&
+  \mbox{the size of the relevant survey volume}
 \end{eqnarray}
 where...
 
 \section{Discussion}
+
+We found blah...
+
+Issues with IMF and stellar evolution.
+
+Issues with radial migration.
 
 \acknowledgements
 It is a pleasure to thank
