@@ -21,8 +21,8 @@ class SFHModel():
         Note many other magic numbers!
         """
         self.dlntime = 0.3
-        self.minage = 0.05 # Gyr
-        self.maxage = 13.7 # Gyr
+        self.minage = 0.3 # Gyr
+        self.maxage = 12.0 # Gyr
         self.minlnage = np.log(self.minage)
         self.maxlnage = np.log(self.maxage)
         self.lntimes = np.arange(self.minlnage, self.maxlnage, self.dlntime)
@@ -55,11 +55,11 @@ class SFHModel():
 
         HORRIBLE clip.
         """
-        fn = "../data/HWR_redclump_sample.txt"
+        fn = "../data/redclump_sample_A_updatedvalues_only.txt"
         print "Reading %s ..." % fn
         data = np.genfromtxt(fn)
         names = ["ID", "distance", "Radius_gal", "Phi_gal", "z", "Teff",
-                 "logg", "[Fe/H]", "[alpha/Fe]", "age"]
+                 "logg", "[Fe/H]", "[alpha/Fe]", "age", "mass"]
         print data[2]
         print data.shape
         print "Read %s" % fn
@@ -167,7 +167,11 @@ if __name__ == "__main__":
     for i in range(16):
         print "parent", i, newpid, "running emcee"
         sampler.run_mcmc(p0, 32)
-        p0 = sampler.flatchain[np.argsort(sampler.flatlnprobability)[-nwalkers:]]
+        print sampler.acceptance_fraction
+        foo = sampler.chain[np.where(sampler.acceptance_fraction > 0.)]
+        a, b, c = foo.shape
+        foo = np.reshape(foo, (a * b, c))
+        p0 = foo[np.random.randint(a * b, size=nwalkers)]
         print "parent made new state", p0.shape
         newpid = os.fork()
         if newpid == 0:
