@@ -1,0 +1,94 @@
+% This file is part of the AgeDistribution project.
+% Copyright 2015 the authors.
+
+\newcommand{\project}[1]{\textsl{#1}}
+\newcommand{\sdss}{\project{\textsc{sdss-III}}}
+\newcommand{\apogee}{\project{\textsc{apogee}}}
+\newcommand{\kepler}{\project{Kepler}}
+\newcommand{\tc}{\project{The~Cannon}}
+
+\newcommand{\foreign}[1]{\textsl{#1}}
+\newcommand{\etal}{\foreign{et\,al}}
+
+\newcommand{\dd}{\mathrm{d}}
+
+\documentclass[12pt, preprint]{aastex}
+
+\begin{document}
+
+\title{A direct measurement of the star-formation history of the Milky Way disk}
+\author{%
+  Hogg,
+  Ness,
+  Rix,
+  Martig,
+  \emph{others}}
+\date{\texttt{DRAFT --- 2015-08-13 --- NOT FOR DISTRIBUTION}}
+
+\begin{abstract}
+% Context
+The star-formation history of the Milky Way has been inferred
+through chemical evolution models, which depend on assumptions about
+infall, outflow, and yields.
+There are also more direct methods, that use stars (such as white
+dwarfs and M-type dwarfs) that provide age indicators.
+% Aims
+Here we measure the star-formation history by a direct method, using
+red-clump stars in the \sdss\ \apogee\ sample, for which we have age
+estimates delivered by a data-driven model of stellar spectra (\tc).
+The stellar sample is novel in its size (XX,000 stars), its spatial
+extent (Galactocentric radii of 6 to 14~kpc), and its positional
+accuracy (distances good to XX~percent).
+% Methods
+\tc\ is trained using stars observed by both \apogee\ and \kepler, for
+which the latter gives a reliable mass estimate---and therefore age
+estimate (given current models of stellar evolution).
+\tc\ is applied to the full \apogee\ red-clump star sample, providing
+masses good to 0.08~dex (and therefore ages good to 0.25~dex).
+We model (deconvolve) the red-clump-star mass distribution as a function
+of Galactocentric radius, and convert this into a star-formation history
+using models of stellar evolution and the initial mass function.
+% Results
+We find ZZZ.
+\end{abstract}
+
+\section{Introduction}
+
+Literature on chemical-evolution star-formation histories.
+
+Literature on the local SFH (from, say, Hipparcos?)
+
+Literature on M-type dwarfs, white dwarfs, rotation, anything else?
+
+What \tc\ can do and has done.
+
+What the red-clump sample can do and has done.
+
+What are our objectives right now?
+
+\section{Method and results}
+
+Off-load all mass and age estimation to Ness \etal\ (2015).
+
+The money equation is:
+\begin{eqnarray}
+  \left.\frac{\dd N}{\dd\ln M}\right| &=&
+  \left.\frac{\dd N}{\dd t\,\dd A}\right|
+  \,M\,\left.\frac{\dd t}{\dd M}\right|
+  \,\Delta A
+  \quad ,
+\end{eqnarray}
+where...
+
+\section{Discussion}
+
+\acknowledgements
+It is a pleasure to thank
+  Maria Bergemann (MPIA)
+  and
+  Julianne J. Dalcanton (UW)
+for useful discussions.
+
+The SDSS [boilerplate here]
+
+\end{document}
