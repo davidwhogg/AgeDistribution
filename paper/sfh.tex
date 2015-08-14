@@ -8,9 +8,11 @@
 \newcommand{\tc}{\project{The~Cannon}}
 
 \newcommand{\foreign}[1]{\textsl{#1}}
-\newcommand{\etal}{\foreign{et\,al}}
+\newcommand{\etal}{\foreign{et~al.}}
 
 \newcommand{\dd}{\mathrm{d}}
+\newcommand{\given}{\,|\,}
+\newcommand{\setof}[1]{\left\{{#1}\right\}}
 
 \documentclass[12pt, preprint]{aastex}
 
@@ -41,8 +43,9 @@ extent (Galactocentric radii of 6 to 14~kpc), and its positional
 accuracy (distances good to XX~percent).
 % Methods
 \tc\ is trained using stars observed by both \apogee\ and \kepler, for
-which the latter gives a reliable mass estimate---and therefore age
-estimate (given current models of stellar evolution).
+which the latter gives (via asteroseismology) a reliable mass
+estimate---and therefore age estimate (given current models of stellar
+evolution).
 \tc\ is applied to the full \apogee\ red-clump star sample, providing
 masses good to 0.08~dex (and therefore ages good to 0.25~dex).
 We model (deconvolve) the red-clump-star mass distribution as a function
@@ -70,28 +73,76 @@ What are our objectives right now?
 
 Off-load all mass and age estimation to Ness \etal\ (2015).
 
-The money equation is:
+The mass estimates have large scatter, so the observed mass
+distribution is related to the true mass distribution by a substantial
+convolution.
+We infer the true mass distribution by forward-modeling the observed
+mass distribution.
+This is a kind of probabilistic deconvolution.
+
 \begin{eqnarray}
   \left.\frac{\dd N}{\dd\ln M}\right|_{M,R}
   &=&
-  \left.\frac{\dd m}{\dd t\,\dd A}\right|_{t,R}
+  \sum_{k=1}^{K} a_{k}(R)\,\delta(\ln M - \ln M_{k})
+  \\
+  \left.\frac{\dd N}{\dd\ln\tilde{M}}\right|_{\tilde{M},R}
+  &=&
+  \sum_{k=1}^{K} a_{k}(R)\,N(\ln\tilde{M}\given \ln M_{k}, \sigma^2)
+  \\
+  a_{k}(R)
+  &=&
+  \exp(\alpha_{k} + \beta_{k}\,[R - R_0])
+  \quad ,
+\end{eqnarray}
+where...
+
+\begin{eqnarray}
+  D
+  &\equiv&
+  \setof{\ln\tilde{M_n}}_{n=1}^{N}
+  \\
+  \ln p(D)
+  &=&
+  \sum_{n=1}^N \ln\left.\frac{\dd N}{\dd\ln\tilde{M}}\right|_{\tilde{M_n},R_n}
+  - \left<N\right>
+  \\
+  \left<N\right>
+  &\equiv&
+  \int \left.\frac{\dd N}{\dd\ln\tilde{M}}\right|_{\tilde{M},R}\,\dd\ln\tilde{M}
+\end{eqnarray}
+where... [SOMETHING IS WRONG, because the $R$ must be averaged over somehow.]
+
+Introduce some terminology around age and time, and also mass of a
+star and mass of a stellar population.
+These are two key confusions for what follows.
+
+We infer a star-formation history from a red-clump mass distribution
+as follows:
+\begin{eqnarray}
+  \left.\frac{\dd N}{\dd\ln M}\right|_{M,R}
+  &=&
+  \left.\frac{\dd m}{\dd t\,\dd A}\right|_{t(M),R}
   \,\left|\frac{\dd t}{\dd\ln M}\right|_{M}
-  \,\left.\frac{\dd N}{\dd m}\right|_{t}
+  \,\left.\frac{\dd N}{\dd m}\right|_{t(M)}
   \,\Delta A
   \\
   \left.\frac{\dd N}{\dd\ln M}\right|_{M,R}
   &\mbox{is}&
-  \mbox{the observable}
+  \mbox{the deconvolved observable}
   \\
-  \left.\frac{\dd m}{\dd t\,\dd A}\right|_{t,R}
+  \left.\frac{\dd m}{\dd t\,\dd A}\right|_{t(M),R}
   &\mbox{is}&
   \mbox{the star-formation rate (mass per time per area)}
+  \\
+  t(M)
+  &\mbox{is}&
+  \mbox{the age $t$ corresponding to mass $M$}
   \\
   \,\left|\frac{\dd t}{\dd\ln M}\right|_{M}
   &\mbox{is}&
   \mbox{the Jacobian that converts $\ln$ mass to age}
   \\
-  \,\left.\frac{\dd N}{\dd m}\right|_{t}
+  \,\left.\frac{\dd N}{\dd m}\right|_{t(M)}
   &\mbox{is}&
   \mbox{the number of RC stars per mass formed, after time $t$}
   \\
@@ -117,5 +168,16 @@ It is a pleasure to thank
 for useful discussions.
 
 The SDSS [boilerplate here]
+
+\newcommand{\arxiv}[1]{\href{http://arxiv.org/abs/#1}{arXiv:#1}}
+\begin{thebibliography}{}\raggedright
+
+\bibitem[Ness \etal(2015a)]{TheCannon}
+Ness, M.~K. \etal, 2015a, ApJ, SOMETHING
+
+\bibitem[Ness \etal(2015b)]{NessAges}
+Ness, M.~K. \etal, 2015b, in preparation
+
+\end{thebibliography}
 
 \end{document}
